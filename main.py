@@ -21,9 +21,9 @@ Navy = (0, 0, 128)
 LIGHT_GREY = (200, 200, 200)
 
 # Game Rectangles
-ball_widht, ball_height = 30, 30
-ball = pygame.Rect(int(WIDTH / 2 - ball_widht / 2), int(HEIGHT / 2 - ball_height / 2), 30,
-                   30)  # (Left,Top, Width ,Height)
+ball_width, ball_height = 30, 30
+ball = pygame.Rect(int(WIDTH / 2 - ball_width / 2), int(HEIGHT / 2 - ball_height / 2), ball_width,
+                   ball_height)  # (Left,Top, Width ,Height)
 
 player_widht, player_height = 10, 140
 player = pygame.Rect(int(WIDTH - player_widht * 2), int(HEIGHT / 2 - player_height / 2), player_widht, player_height)
@@ -40,10 +40,40 @@ ball_speed_Y = 7 * random.choice((1, -1))
 player_speed = 0
 opponent_speed = 7
 
+# Text Variables
+player_score = 0
+opponent_score = 0
+game_font = pygame.font.Font("freesansbold.ttf", 30)  # Font name, font size
+
+# Time Variables
+score_time =True
+
 
 def ball_restart():
-    global ball_speed_X, ball_speed_Y
-    ball.center = (WIDTH / 2, HEIGHT / 2)
+    global ball_speed_X, ball_speed_Y, score_time
+
+    current_time = pygame.time.get_ticks()
+    time= current_time-score_time
+    ball.center = (int(WIDTH / 2), int(HEIGHT / 2))
+
+    if time <700:
+        number_three= game_font.render("3",0,BLUE)
+        SCREEN.blit(number_three,(int(WIDTH/2-10),int(HEIGHT/2+20)))
+    if 700 < time < 1400:
+        number_two= game_font.render("2",0,RED)
+        SCREEN.blit(number_two,(int(WIDTH/2-10),int(HEIGHT/2+20)))
+    if 1400<time<2100:
+        number_one= game_font.render("1",0,GREEN)
+        SCREEN.blit(number_one, (int(WIDTH/2-10),int(HEIGHT/2+20)))
+
+    if time < 2100:
+        ball_speed_X, ball_speed_Y = 0, 0
+    else:
+        ball_speed_X = 7 * random.choice((1, -1))
+        ball_speed_Y = 7 * random.choice((1, -1))
+        score_time = None
+
+
     ball_speed_Y *= random.choice((1, -1))
     ball_speed_X *= random.choice((1, -1))
 
@@ -68,14 +98,21 @@ def opponent_animation():
 
 
 def ball_animation():
-    global ball_speed_X, ball_speed_Y
+    global ball_speed_X, ball_speed_Y, opponent_score, player_score, score_time
     ball.x += ball_speed_X
     ball.y += ball_speed_Y
 
     if ball.top <= 0 or ball.bottom >= HEIGHT:
         ball_speed_Y *= -1
-    if ball.left <= 0 or ball.right >= WIDTH:
-        ball_restart()
+
+    if ball.left <= 0:
+        player_score += 1
+        score_time = pygame.time.get_ticks()
+
+        # Opponent Score
+    if ball.right >= WIDTH:
+        opponent_score += 1
+        score_time = pygame.time.get_ticks()
 
     if ball.colliderect(player) or ball.colliderect(opponent):
         ball_speed_X *= -1
@@ -110,8 +147,17 @@ while running:
     pygame.draw.rect(SCREEN, LIGHT_GREY, opponent)
     pygame.draw.ellipse(SCREEN, LIGHT_GREY, ball)
     pygame.draw.aaline(SCREEN, LIGHT_GREY, (WIDTH / 2, 0), (
-    WIDTH / 2, HEIGHT))  # IN First tuple (width/2) means at middle and 0 means starting heigt(from top)
+        WIDTH / 2, HEIGHT))  # IN First tuple (width/2) means at middle and 0 means starting heigt(from top)
     # Second tuple means where to end the line so Widht/2,height will be straight with frist tuple.
+
+    if score_time:
+        ball_restart()
+
+    player_text = game_font.render(f'{player_score}', False, LIGHT_GREY)
+    SCREEN.blit(player_text, (520, 320))
+
+    opponent_text = game_font.render(f'{opponent_score}', False, LIGHT_GREY)
+    SCREEN.blit(opponent_text, (465, 320))
 
     # Updating the Screen
     pygame.display.flip()
