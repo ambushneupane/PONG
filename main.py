@@ -3,6 +3,7 @@ import random
 
 # setup
 pygame.init()
+pygame.mixer.pre_init(44100,-16,2,512)
 clock = pygame.time.Clock()
 
 # Main Screen
@@ -10,6 +11,9 @@ WIDTH, HEIGHT = 1000, 680
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("PONG GAME")
 
+#Sounds
+pong_sound=pygame.mixer.Sound("pong.ogg")
+score_sound= pygame.mixer.Sound("score.ogg")
 # colors
 RED = (255, 0, 0)
 LIME = (0, 255, 0)
@@ -46,25 +50,25 @@ opponent_score = 0
 game_font = pygame.font.Font("freesansbold.ttf", 30)  # Font name, font size
 
 # Time Variables
-score_time =True
+score_time = True
 
 
 def ball_restart():
     global ball_speed_X, ball_speed_Y, score_time
 
     current_time = pygame.time.get_ticks()
-    time= current_time-score_time
+    time = current_time - score_time
     ball.center = (int(WIDTH / 2), int(HEIGHT / 2))
 
-    if time <700:
-        number_three= game_font.render("3",0,BLUE)
-        SCREEN.blit(number_three,(int(WIDTH/2-10),int(HEIGHT/2+20)))
+    if time < 700:
+        number_three = game_font.render("3", 0, BLUE)
+        SCREEN.blit(number_three, (int(WIDTH / 2 - 10), int(HEIGHT / 2 + 20)))
     if 700 < time < 1400:
-        number_two= game_font.render("2",0,RED)
-        SCREEN.blit(number_two,(int(WIDTH/2-10),int(HEIGHT/2+20)))
-    if 1400<time<2100:
-        number_one= game_font.render("1",0,GREEN)
-        SCREEN.blit(number_one, (int(WIDTH/2-10),int(HEIGHT/2+20)))
+        number_two = game_font.render("2", 0, RED)
+        SCREEN.blit(number_two, (int(WIDTH / 2 - 10), int(HEIGHT / 2 + 20)))
+    if 1400 < time < 2100:
+        number_one = game_font.render("1", 0, GREEN)
+        SCREEN.blit(number_one, (int(WIDTH / 2 - 10), int(HEIGHT / 2 + 20)))
 
     if time < 2100:
         ball_speed_X, ball_speed_Y = 0, 0
@@ -72,7 +76,6 @@ def ball_restart():
         ball_speed_X = 7 * random.choice((1, -1))
         ball_speed_Y = 7 * random.choice((1, -1))
         score_time = None
-
 
     ball_speed_Y *= random.choice((1, -1))
     ball_speed_X *= random.choice((1, -1))
@@ -103,19 +106,37 @@ def ball_animation():
     ball.y += ball_speed_Y
 
     if ball.top <= 0 or ball.bottom >= HEIGHT:
+        pygame.mixer.Sound.play(pong_sound)
         ball_speed_Y *= -1
 
     if ball.left <= 0:
+        pygame.mixer.Sound.play(score_sound)
         player_score += 1
         score_time = pygame.time.get_ticks()
 
         # Opponent Score
     if ball.right >= WIDTH:
+        pygame.mixer.Sound.play(score_sound)
         opponent_score += 1
         score_time = pygame.time.get_ticks()
 
-    if ball.colliderect(player) or ball.colliderect(opponent):
-        ball_speed_X *= -1
+    if ball.colliderect(player) and ball_speed_X > 0:
+        pygame.mixer.Sound.play(pong_sound)
+        if abs(ball.right - player.left) < 10:
+            ball_speed_X *= -1
+        elif abs(ball.bottom - player.top) < 10 and ball_speed_Y > 0:
+            ball_speed_Y *= -1
+        elif abs(ball.top - player.bottom) < 10 and ball_speed_Y < 0:
+            ball_speed_Y *= -1
+
+    if ball.colliderect(opponent) and ball_speed_X < 0:
+        pygame.mixer.Sound.play(pong_sound)
+        if abs(ball.left - opponent.right) < 10:
+            ball_speed_X *= -1
+        elif abs(ball.bottom - opponent.top) < 10 and ball_speed_Y > 0:
+            ball_speed_Y *= -1
+        elif abs(ball.top - opponent.bottom) < 10 and ball_speed_Y < 0:
+            ball_speed_Y *= -1
 
 
 # Game LOOP
@@ -141,14 +162,14 @@ while running:
     player_animation()
     opponent_animation()
 
-    # Visulas
+    # Visuals
     SCREEN.fill(BACKGROUND_COLOR)
     pygame.draw.rect(SCREEN, LIGHT_GREY, player)
     pygame.draw.rect(SCREEN, LIGHT_GREY, opponent)
     pygame.draw.ellipse(SCREEN, LIGHT_GREY, ball)
     pygame.draw.aaline(SCREEN, LIGHT_GREY, (WIDTH / 2, 0), (
-        WIDTH / 2, HEIGHT))  # IN First tuple (width/2) means at middle and 0 means starting heigt(from top)
-    # Second tuple means where to end the line so Widht/2,height will be straight with frist tuple.
+        WIDTH / 2, HEIGHT))  # IN First tuple (width/2) means at middle and 0 means starting height(from top)
+    # Second tuple means where to end the line so width/2,height will be straight with first tuple.
 
     if score_time:
         ball_restart()
